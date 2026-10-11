@@ -20,6 +20,7 @@ class TapViewModel(app: Application): AndroidViewModel(app) {
  private var remote: HttpGateway?=null
  private var selectedScenario="approve"
  private var selectedBackend=false
+ private var checkoutEndpoint=""
  private val namespace=app.getSharedPreferences("portfolio-account",0).getString("namespace",sessionNamespace("local-demo"))!!
  private val prefs=app.getSharedPreferences("checkout-$namespace",0)
  var sales by mutableStateOf(listOf<Sale>());private set
@@ -39,7 +40,7 @@ class TapViewModel(app: Application): AndroidViewModel(app) {
   if(prefs.contains("pendingKey")){message="Concilie a cobrança pendente primeiro.";return}
   val amount=parseCents(input) ?: run {message="Informe um valor válido, com até duas casas decimais";return}
   try {
-   selectedScenario=scenario;selectedBackend=backend
+   selectedScenario=scenario;selectedBackend=backend;checkoutEndpoint=url
    remote=if(backend) HttpGateway(url,scenario) else null
    val gateway:PaymentGateway=remote ?: SimulatedPaymentGateway(if(scenario=="decline") SimulationScenario.DECLINE else SimulationScenario.APPROVE)
    client=PaymentClient(gateway)
@@ -48,7 +49,7 @@ class TapViewModel(app: Application): AndroidViewModel(app) {
  }
  fun simulateTap(){
   val waiting=state as? CheckoutState.Waiting ?: return;state=tap(state)
-  prefs.edit().putString("pendingKey",waiting.request.idempotencyKey).putLong("pendingAmount",waiting.request.amountInCents).putBoolean("pendingBackend",selectedBackend).putString("pendingScenario",selectedScenario).commit()
+  prefs.edit().putString("pendingKey",waiting.request.idempotencyKey).putLong("pendingAmount",waiting.request.amountInCents).putBoolean("pendingBackend",selectedBackend).putString("pendingScenario",selectedScenario).putString("pendingEndpoint",checkoutEndpoint).commit()
   viewModelScope.launch {
    val result=requireNotNull(client).pay(waiting.request);state=finish(state,waiting.request.idempotencyKey,result);record(waiting.request,result)
   }
@@ -58,7 +59,7 @@ class TapViewModel(app: Application): AndroidViewModel(app) {
   if(consulting)return
   consulting=true
   viewModelScope.launch {
-   try {val result=if(prefs.getBoolean("pendingBackend",true)) HttpGateway(url,"approve").reconcile(completed.request.idempotencyKey) else SimulatedPaymentGateway(if(prefs.getString("pendingScenario","approve")=="decline") SimulationScenario.DECLINE else SimulationScenario.APPROVE).authorize(completed.request);state=CheckoutState.Completed(completed.request,result);record(completed.request,result)}
+   try {val result=if(prefs.getBoolean("pendingBackend",true)) HttpGateway(prefs.getString("pendingEndpoint",url) ?: url,"approve").reconcile(completed.request.idempotencyKey) else SimulatedPaymentGateway(if(prefs.getString("pendingScenario","approve")=="decline") SimulationScenario.DECLINE else SimulationScenario.APPROVE).authorize(completed.request);state=CheckoutState.Completed(completed.request,result);record(completed.request,result)}
    catch(e:CancellationException){throw e}catch(e:Exception){message="Consulta falhou: ${e.message}"}finally{consulting=false}
   }
  }
