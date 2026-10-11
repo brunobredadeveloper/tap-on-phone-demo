@@ -1,1 +1,1 @@
-Simulated Tap on Phone Android app with Compose, Kotlin payment SDK, timeout reconciliation and Firebase Auth/Firestore history.
+Terminal escuro e âmbar: dashboard, preparação da cobrança, aproximação animada, processamento, resultado, comprovante, histórico com filtros, integração HTTP, diagnóstico NFC e perfil.

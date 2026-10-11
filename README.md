@@ -1,57 +1,36 @@
-# Tap on Phone Demo
+# Breda Tap Terminal
 
-Android portfolio app by Bruno Breda with Compose, a Kotlin checkout state machine, payment SDK integration, local HTTP reconciliation and optional Firebase Authentication / Firestore history.
+Versão 0.2: experiência Android com múltiplos fluxos, autenticação opcional e identidade visual própria. Pagamentos são fictícios.
 
-**All payments and taps are simulated.** This app does not read NFC cards, accept bank cards, implement EMV or move money. No workplace SDK or terminal dependency is used.
+## Fluxos disponíveis
 
-## Build
+Terminal escuro e âmbar: dashboard, preparação da cobrança, aproximação animada, processamento, resultado, comprovante, histórico com filtros, integração HTTP, diagnóstico NFC e perfil.
 
-JDK 17 with compiler, Android SDK 35, Android Studio. Minimum Android API 26.
+## Engenharia demonstrada
 
-```sh
-./gradlew :core:test
-./gradlew -PincludeAndroid=true :app:lintDebug :app:assembleDebug
-```
+Checkout com estados explícitos, ledger persistente por conta e chave pendente recuperada após reinício. Resposta perdida é conciliada por consulta; nova cobrança bloqueada enquanto houver pendência. Firestore opcional registra histórico do usuário autenticado. NFC só diagnostica disponibilidade: não lê cartão nem processa EMV.
 
-Set `includeAndroid=true` in your user Gradle properties when opening Android Studio. CI includes JVM tests and Android lint/APK jobs. Gradle wrapper is included.
+| Aplicativo Firebase | Package Android |
+|---|---|
+| Breda Tap Terminal | `dev.breda.tap` |
 
-`payment-sdk` vendors the public Kotlin source from `brunobredadeveloper/kotlin-payment-sdk` commit `0071ea02a47d79b29d03ff76ae5c9376d8454913`, so no unpublished Maven dependency or sibling checkout is required. A future release can replace this pinned snapshot with a published artifact.
+## Autenticação Firebase
 
-## Demonstration
+1. Crie um projeto no Firebase Console e habilite **Authentication → Sign-in method → Email/Password**. Não é necessário habilitar login anônimo.
+2. Registre o aplicativo Android usando o package da tabela abaixo. Baixe seu `google-services.json`.
+3. No GitHub deste repositório, crie o secret de Actions **FIREBASE_CONFIG_JSON** com o JSON inteiro do aplicativo correspondente. O script CI valida o package e gera um asset de configuração; o arquivo pessoal não é versionado.
+4. Execute a esteira novamente para gerar um APK configurado. Para desenvolvimento local: `FIREBASE_CONFIG_JSON="$(cat /caminho/google-services.json)" python3 scripts/configure_firebase.py`.
+5. Crie conta no aplicativo, saia, entre novamente, envie recuperação de senha e verificação de e-mail. Firebase restaura a sessão. Senhas não são salvas pelo aplicativo.
 
-1. Enter `25,90`, choose approve or decline, start checkout and press **Simular aproximação**.
-2. To use the companion backend, run `merchant-payments-console/server.py` and enable Merchant Console.
-3. Emulator URL: `http://10.0.2.2:8080`. USB phone: `adb reverse tcp:8080 tcp:8080`, URL `http://127.0.0.1:8080`.
-4. Choose Timeout: the server records approval but delays its response. The app shows uncertainty.
-5. Press **Consultar resultado** to retrieve the original payment, without creating another charge.
-6. Open the console dashboard and view/refund that operation.
+Sem configuração, o APK oferece **demonstração local** explicitamente identificada. Ela não autentica no Firebase. Autenticação real, entrega de e-mails e isolamento Firestore exigem validar com seu projeto. Os dados locais são separados pelo hash SHA-256 do UID; isso é organização por conta, não criptografia de dados em repouso. Firebase Auth identifica o usuário, mas não transforma simuladores de negócio em uma API de pagamentos autorizada.
 
-Debug builds permit HTTP for this local lab. Release uses Android default TLS policy. The backend is unauthenticated and must remain local. Checkout persists the pending key and amount before calling the gateway; a process restart recovers an uncertain checkout and blocks new charges until resolved. This is a single-device demonstration, not a durable payment processing system.
+## Experiência e animação
 
-## Firebase setup
+Onboarding, splash, formulários de login/cadastro/recuperação, navegação com transições, feedback de carregamento/sucesso/erro via Lottie e perfil. As animações geométricas em `src/main/assets/motion_*.json` foram criadas para este projeto; não dependem de downloads em tempo de execução. Layout Compose com rolagem, estados vazios e componentes Material 3. Testes visuais e acessibilidade no aparelho ainda são necessários.
 
-The app runs without a Firebase account. To activate cloud history:
+## Build e validação
 
-1. Create your own development Firebase project and register Android package `dev.breda.tap`.
-2. Enable Authentication's Anonymous provider.
-3. Create Cloud Firestore and deploy the supplied `firestore.rules` to that project.
-4. Copy `app/src/main/assets/firebase-config.example.json` to `firebase-config.json`, inserting project ID, Firebase application ID (`mobilesdk_app_id`) and API key from the Android app configuration.
-5. Rebuild. The screen shows Firebase configured; **Carregar histórico Firebase** fetches this anonymous user's records.
+A esteira `.github/workflows/ci.yml` executa testes de domínio e/ou SDK, testes de isolamento de sessão, Android Lint e montagem de APK debug. Em **Actions → Tests and APK → Artifacts**, baixe o ZIP de APK e extraia o `.apk`. A chave debug é preservada por cache quando disponível; se o cache for perdido, poderá ser necessário desinstalar a versão anterior. Esse APK é para demonstração, sem publicação de release.
 
-The app explicitly initializes a named FirebaseApp with FirebaseOptions. It therefore does not require the Google Services Gradle plugin. Never add an Admin SDK service-account key to the app. The personal config file is ignored by Git.
+Veja `docs/advanced-experience.md` para o roteiro manual. Testes automatizados de núcleo não substituem teste de navegação e integração Firebase em um celular.
 
-Each history document is stored at `users/{uid}/demoPayments/{requestKey}`. Rules require the authenticated UID to match the path, validate amount/status and require `simulation=true`; unmatched collections are denied. These client-written documents are demo history, not authoritative payment records. Losing the anonymous account (for example clearing app data) means losing access to that UID's history. Firebase failures are shown separately and do not change the checkout outcome. Cloud history writes are best effort; no durable retry outbox is implemented yet.
-
-## Architecture and validation
-
-- `core`: pure checkout transitions and exact decimal-to-cents conversion.
-- `payment-sdk`: typed outcomes, coroutine handling, session idempotency.
-- `app`: Compose UI, HttpGateway, pending checkout persistence and Firebase adapter.
-
-5 JVM tests passed using Kotlin 2.1.20/JUnit: money validation, legal tap transition, duplicate tap, stale response and uncertain request retention. Android compilation/device testing and Firebase integration/rules-emulator testing are still pending. No production readiness or certification is claimed.
-
-## GitHub Actions and Firebase
-
-Actions builds a local simulation APK even without Firebase configuration. For a Firebase-enabled APK, add repository secret `FIREBASE_CONFIG_JSON` containing the entire Android `google-services.json` downloaded from your own Firebase project. The build script converts its client configuration into the app asset. It validates package `dev.breda.tap` and never prints config values. The same secret also accepts the simplified example JSON. Configure Authentication and deploy Firestore rules before device testing.
-
-Go to Actions → Tests and APK → latest successful run → Artifacts → tap-on-phone-demo-debug-apk. Unzip and install the APK. Use Run workflow to rebuild after adding the secret. Debug APKs are for personal device testing; the signing-key cache helps preserve signatures between builds, but uninstall may be required if the cache is lost.

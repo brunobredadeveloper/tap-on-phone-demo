@@ -34,8 +34,8 @@ class AccountSession(application:Application):AndroidViewModel(application) {
   val user=value.currentUser
   if(user!=null && !user.isAnonymous) {
    preferences.edit().putString("namespace",sessionNamespace(user.uid)).commit()
-   email=user.email.orEmpty();name=user.displayName ?: "Bruno";session=user.uid
-  }else if(!demo) {session=null;email="";name=""}
+   email=user.email.orEmpty();name=user.displayName ?: "Minha conta";session=user.uid
+  }else if(!demo) {preferences.edit().putString("namespace",sessionNamespace("local-demo")).commit();session=null;email="";name=""}
  }
  init {auth?.setLanguageCode("pt");auth?.addAuthStateListener(listener)}
  fun finishOnboarding() {preferences.edit().putBoolean("onboarded",true).apply();onboarded=true}
