@@ -49,3 +49,46 @@ jobs:
           path: |
             **/build/reports/tests/
             **/build/reports/lint-results-debug.html
+
+  experience:
+    name: Emulator UX and Lottie
+    runs-on: ubuntu-latest
+    needs: validate
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Exercise splash, auth, navigation and result screens
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
+          script: ./gradlew :app:connectedDebugAndroidTest --stacktrace
+      - name: Collect UX screenshots
+        if: always()
+        run: |
+          mkdir -p ux-screenshots
+          adb pull /sdcard/Android/data/dev.breda.tap/files/ux ux-screenshots/ || true
+      - name: Upload UX evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tap-on-phone-demo-ux-evidence
+          path: |
+            ux-screenshots/
+            **/build/reports/androidTests/
+            **/build/outputs/androidTest-results/
+          retention-days: 30

@@ -51,7 +51,7 @@ class TapViewModel(app: Application): AndroidViewModel(app) {
   val waiting=state as? CheckoutState.Waiting ?: return;state=tap(state)
   prefs.edit().putString("pendingKey",waiting.request.idempotencyKey).putLong("pendingAmount",waiting.request.amountInCents).putBoolean("pendingBackend",selectedBackend).putString("pendingScenario",selectedScenario).putString("pendingEndpoint",checkoutEndpoint).commit()
   viewModelScope.launch {
-   val result=requireNotNull(client).pay(waiting.request);state=finish(state,waiting.request.idempotencyKey,result);record(waiting.request,result)
+   kotlinx.coroutines.delay(1400);val result=requireNotNull(client).pay(waiting.request);state=finish(state,waiting.request.idempotencyKey,result);record(waiting.request,result)
   }
  }
  fun reconcile(url:String){
