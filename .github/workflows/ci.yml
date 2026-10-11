@@ -76,12 +76,7 @@ jobs:
           profile: pixel_2
           disable-animations: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -memory 2048
-          script: ./gradlew :app:connectedDebugAndroidTest --stacktrace
-      - name: Collect UX screenshots
-        if: always()
-        run: |
-          mkdir -p ux-screenshots
-          adb pull /sdcard/Android/data/dev.breda.tap/files/ux ux-screenshots/ || true
+          script: bash scripts/check_experience.sh
       - name: Upload UX evidence
         if: always()
         uses: actions/upload-artifact@v4
