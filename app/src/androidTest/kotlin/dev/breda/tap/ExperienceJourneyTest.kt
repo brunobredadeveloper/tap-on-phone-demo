@@ -20,7 +20,7 @@ class ExperienceJourneyTest {
  private val context get()=InstrumentationRegistry.getInstrumentation().targetContext
  private var scenario:ActivityScenario<MainActivity>?=null
  private fun capture(name:String){val dir=File(context.getExternalFilesDir(null),"ux");dir.mkdirs();UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).takeScreenshot(File(dir,"$name.png"))}
- private fun click(text:String){ui.onNodeWithText(text).performScrollTo().performClick()}
+ private fun click(text:String){val node=ui.onNodeWithText(text);runCatching{node.assertIsDisplayed()}.onFailure{node.performScrollTo()};node.performClick()}
  private fun shown(tag:String){ui.waitUntil(15000){ui.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()};ui.onNodeWithTag(tag).assertIsDisplayed()}
  @Before fun prepare(){context.getSharedPreferences("portfolio-account",0).edit().clear().commit();MotionPolicy.freezeForTests=true}
  @After fun finish(){scenario?.close();MotionPolicy.freezeForTests=false}
@@ -44,7 +44,7 @@ class ExperienceJourneyTest {
    val parsed=LottieCompositionFactory.fromAssetSync(context,"motion_$kind.json")
    assertNull("$kind must parse",parsed.exception);val composition=requireNotNull(parsed.value)
    assertTrue(composition.layers.isNotEmpty())
-   val drawable=LottieDrawable();drawable.composition=composition;drawable.setBounds(0,0,320,320)
+   val drawable=LottieDrawable();drawable.setComposition(composition);drawable.setBounds(0,0,320,320)
    fun frame(progress:Float):IntArray{val bitmap=Bitmap.createBitmap(320,320,Bitmap.Config.ARGB_8888);drawable.progress=progress;drawable.draw(Canvas(bitmap));return IntArray(320*320).also{bitmap.getPixels(it,0,320,0,0,320,320);bitmap.recycle()}}
    val first=frame(.08f);val second=frame(.65f)
    assertTrue("$kind must be visible",second.count{it ushr 24!=0}>250)
