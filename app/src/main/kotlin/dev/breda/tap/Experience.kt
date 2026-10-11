@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -90,8 +91,8 @@ object MotionPolicy {var freezeForTests=false}
 }
 /** Dedicated, full-page transaction feedback. No bottom navigation while processing. */
 @Composable fun ResultExperience(kind:String,title:String,description:String,amount:String="",reference:String="",primaryLabel:String="",onPrimary:(()->Unit)?=null,secondaryLabel:String="",onSecondary:(()->Unit)?=null,extra:@Composable ColumnScope.()->Unit={}){
- val tint=when(kind){"success"->Color(0xFF12B886);"error"->Color(0xFFF05D6C);else->Brand}
- BackHandler(enabled=kind=="loading"){}
+ val tint=when(kind){"success"->if(MaterialTheme.colorScheme.background.luminance()>.5f)Color(0xFF07865E)else Color(0xFF12B886);"error"->Color(0xFFF05D6C);else->Brand}
+ BackHandler{if(kind!="loading"){onSecondary?.invoke() ?: onPrimary?.invoke()}}
  Column(Modifier.fillMaxSize().testTag("result-$kind").background(Brush.verticalGradient(listOf(tint.copy(alpha=.12f),MaterialTheme.colorScheme.background))).verticalScroll(rememberScrollState()).padding(24.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(16.dp)){
   Spacer(Modifier.height(16.dp));Text(BrandTitle.uppercase(),style=MaterialTheme.typography.labelLarge,color=MaterialTheme.colorScheme.onSurfaceVariant)
   key(kind){MotionState(kind,size=260.dp)}
@@ -172,7 +173,15 @@ object MotionPolicy {var freezeForTests=false}
 @Composable fun Workspace(account:AccountSession,tabs:List<String>,content:@Composable (String,(String)->Unit)->Unit){
  val nav=rememberNavController();val entry by nav.currentBackStackEntryAsState();val route=entry?.destination?.route ?: "home"
  val roots=listOf("home","activity","tools","account")
- fun go(target:String){if(target=="home"){nav.popBackStack("home",false)}else nav.navigate(target){launchSingleTop=true;if(target in roots){popUpTo("home"){saveState=true};restoreState=true}}}
+ fun go(target:String){
+  if(target==route)return
+  if(target=="home"){nav.popBackStack("home",false);return}
+  if(target in roots){
+   if(!nav.popBackStack(target,false))nav.navigate(target){popUpTo("home"){inclusive=false};launchSingleTop=true}
+  }else if(target=="operation" && route=="result"){
+   if(!nav.popBackStack("operation",false))nav.navigate(target){launchSingleTop=true}
+  }else nav.navigate(target){launchSingleTop=true}
+ }
  val fullScreen=route in listOf("result","compatibility","operation")
  Scaffold(containerColor=MaterialTheme.colorScheme.background,bottomBar={if(!fullScreen)NavigationBar(containerColor=MaterialTheme.colorScheme.surface){tabs.forEachIndexed{index,label->val path=roots[index];NavigationBarItem(selected=route==path,onClick={go(path)},icon={Icon(listOf(Icons.Default.Dashboard,Icons.Default.ReceiptLong,Icons.Default.Tune,Icons.Default.Person)[index],null)},label={Text(label)},alwaysShowLabel=true)}}}){padding->
   Box(Modifier.padding(padding)){NavHost(nav,"home",enterTransition={fadeIn(tween(350))+slideInHorizontally{it/6}},exitTransition={fadeOut(tween(180))},popEnterTransition={fadeIn(tween(250))},popExitTransition={fadeOut(tween(180))}){
