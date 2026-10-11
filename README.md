@@ -49,3 +49,9 @@ Each history document is stored at `users/{uid}/demoPayments/{requestKey}`. Rule
 - `app`: Compose UI, HttpGateway, pending checkout persistence and Firebase adapter.
 
 5 JVM tests passed using Kotlin 2.1.20/JUnit: money validation, legal tap transition, duplicate tap, stale response and uncertain request retention. Android compilation/device testing and Firebase integration/rules-emulator testing are still pending. No production readiness or certification is claimed.
+
+## GitHub Actions and Firebase
+
+Actions builds a local simulation APK even without Firebase configuration. For a Firebase-enabled APK, add repository secret `FIREBASE_CONFIG_JSON` containing the entire Android `google-services.json` downloaded from your own Firebase project. The build script converts its client configuration into the app asset. It validates package `dev.breda.tap` and never prints config values. The same secret also accepts the simplified example JSON. Configure Authentication and deploy Firestore rules before device testing.
+
+Go to Actions → Tests and APK → latest successful run → Artifacts → tap-on-phone-demo-debug-apk. Unzip and install the APK. Use Run workflow to rebuild after adding the secret. Debug APKs are for personal device testing; the signing-key cache helps preserve signatures between builds, but uninstall may be required if the cache is lost.
