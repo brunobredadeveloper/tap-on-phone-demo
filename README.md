@@ -40,3 +40,7 @@ A esteira `.github/workflows/ci.yml` executa testes de domínio e/ou SDK, testes
 
 Veja `docs/advanced-experience.md` para o roteiro manual. Testes automatizados de núcleo não substituem teste de navegação e integração Firebase em um celular.
 
+
+## Clean Code, MVVM e SOLID
+
+ViewModels recebem ports por construtor e a UI observa estados. Casos de uso, adapters e injeção manual estão descritos em [Arquitetura e decisões](docs/architecture.md), com os contratos e os testes correspondentes.
