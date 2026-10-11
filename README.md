@@ -1,6 +1,12 @@
 # Breda Tap Terminal
 
-Versão 0.2: experiência Android com múltiplos fluxos, autenticação opcional e identidade visual própria. Pagamentos são fictícios.
+Versão 0.3: experiência Android com múltiplos fluxos, autenticação opcional e identidade visual própria. Pagamentos são fictícios.
+
+## Identidade e experiência 0.3
+
+Ícone adaptativo compartilhado **breda_dev** nos quatro apps. Splash nativo Android seguido de abertura Lottie contextual por 3,2 segundos (no lançamento, sem repetir na rotação). Formulários com teclado adequado, mostrar/ocultar senha e navegação login/cadastro/recuperação. Estados de operação ocupam uma tela própria: preparação/processamento, sucesso e erro, com animações grandes e ações adequadas ao resultado. A demo deixa os estados rápidos visíveis; isso não altera o contrato do núcleo de pagamentos.
+
+As esteiras incluem uma jornada instrumentada em emulador: splash, login, cadastro/recuperação, modo local, operação, sucesso/erro, histórico e saída. Também verificam que Lottie renderiza pixels e muda de frame. Capturas e relatórios ficam no artifact `*-ux-evidence`. As capturas usam frame fixo para comparação; as animações permanecem ativas nos APKs normais.
 
 ## Fluxos disponíveis
 
