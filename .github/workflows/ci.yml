@@ -1,0 +1,51 @@
+name: Tests and APK
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0'
+          log-accepted-android-sdk-licenses: false
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Restore demo signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: demo-debug-key-v1-${{ github.repository }}
+      - name: Configure optional Firebase
+        env:
+          FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
+        run: python scripts/configure_firebase.py
+      - name: Test, lint and build
+        run: ./gradlew -PincludeAndroid=true :core:test :app:lintDebug :app:assembleDebug --stacktrace
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tap-on-phone-demo-debug-apk
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 30
+      - name: Upload test and lint reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tap-on-phone-demo-reports
+          path: |
+            **/build/reports/tests/
+            **/build/reports/lint-results-debug.html
