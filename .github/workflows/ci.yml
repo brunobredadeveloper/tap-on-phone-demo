@@ -33,7 +33,7 @@ jobs:
           FIREBASE_CONFIG_JSON: ${{ secrets.FIREBASE_CONFIG_JSON }}
         run: python scripts/configure_firebase.py
       - name: Test, lint and build
-        run: ./gradlew -PincludeAndroid=true :core:test :app:lintDebug :app:assembleDebug --stacktrace
+        run: ./gradlew -PincludeAndroid=true :core:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --stacktrace
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:

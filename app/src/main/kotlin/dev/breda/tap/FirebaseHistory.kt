@@ -14,9 +14,9 @@ class FirebaseHistory(context: Context) {
   FirebaseApp.getApps(context).firstOrNull { it.name == "tap-demo" } ?: FirebaseApp.initializeApp(context,
    FirebaseOptions.Builder().setProjectId(c.getString("projectId")).setApplicationId(c.getString("applicationId")).setApiKey(c.getString("apiKey")).build(),"tap-demo")
  } catch (_: java.io.FileNotFoundException) { null }
- val configured get()=app!=null
+ val configured get()=app!=null && com.google.firebase.auth.FirebaseAuth.getInstance(requireNotNull(app)).currentUser?.isAnonymous==false
  private suspend fun uid(): String {
-  val auth=FirebaseAuth.getInstance(requireNotNull(app));return auth.currentUser?.uid ?: requireNotNull(auth.signInAnonymously().await().user).uid
+  val auth=FirebaseAuth.getInstance(requireNotNull(app));return requireNotNull(auth.currentUser) {"Login obrigatório"}.uid
  }
  suspend fun save(key: String, amount: Long, status: String) {
   val user=uid();FirebaseFirestore.getInstance(requireNotNull(app)).collection("users").document(user).collection("demoPayments").document(key)
