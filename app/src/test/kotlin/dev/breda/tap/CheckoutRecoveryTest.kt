@@ -17,7 +17,7 @@ class CheckoutRecoveryTest {
         recovery.record(request, PaymentResult.OutcomeUnknown)
         assertNotNull(storage.pending)
         assertEquals("unknown", storage.sales.single().status)
-        recovery.record(request, PaymentResult.Declined("test"))
+        recovery.record(request, PaymentResult.Declined(DeclineReason.REJECTED_BY_ISSUER))
         assertNull(storage.pending)
         assertEquals(1, storage.sales.size)
         assertEquals("declined", storage.sales.single().status)
@@ -31,7 +31,13 @@ class CheckoutRecoveryTest {
         recovery.start(PendingCheckout(request, true, "approve", "http://localhost:8080"))
         storage.failWrite = true
         assertTrue(
-            runCatching { recovery.record(request, PaymentResult.Declined("test")) }.isFailure
+            runCatching {
+                    recovery.record(
+                        request,
+                        PaymentResult.Declined(DeclineReason.REJECTED_BY_ISSUER),
+                    )
+                }
+                .isFailure
         )
         assertEquals(request, storage.pending?.request)
     }

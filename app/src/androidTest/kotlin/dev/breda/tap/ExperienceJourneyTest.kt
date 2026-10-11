@@ -23,7 +23,10 @@ class ExperienceJourneyTest {
     private var scenario: ActivityScenario<MainActivity>? = null
 
     private fun capture(name: String) {
+        ui.waitForIdle()
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
         val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        device.waitForIdle(1000)
         device.executeShellCommand("mkdir -p /data/local/tmp/breda-ux")
         device.executeShellCommand("screencap -p /data/local/tmp/breda-ux/$name.png")
         val bytes =
