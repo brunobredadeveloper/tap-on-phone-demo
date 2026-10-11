@@ -72,6 +72,7 @@ class TapViewModel(app: Application): AndroidViewModel(app) {
   history=sales.map {"${it.amount} centavos · ${it.status}"}
   if(cloud.configured)try{cloud.save(request.idempotencyKey,request.amountInCents,status)}catch(e:CancellationException){throw e}catch(e:Exception){message+=" · Histórico Firebase pendente: ${e.message}"}
  }
+ fun prepareNew(){if(!prefs.contains("pendingKey") && state is CheckoutState.Completed)state=CheckoutState.Idle}
  fun cancelWaiting(){if(state is CheckoutState.Waiting){state=CheckoutState.Idle;message="Cobrança cancelada antes da aproximação."}}
  fun refreshHistory(){if(!cloud.configured)return;viewModelScope.launch {try{history=cloud.history()}catch(e:CancellationException){throw e}catch(e:Exception){message="Firebase: ${e.message}"}}}
 }
